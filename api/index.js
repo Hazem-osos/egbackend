@@ -1,107 +1,58 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
-const { PrismaClient } = require('@prisma/client');
-const dotenv = require('dotenv');
 const serverless = require('serverless-http');
-
-// Load environment variables
-dotenv.config();
-
-// Get the correct paths for serverless deployment
-const projectRoot = path.join(__dirname, '..');
 
 const app = express();
 
-// Trust proxy for Vercel
-app.set('trust proxy', 1);
-
 // Basic middleware
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// CORS configuration
-const allowedOrigins = [
-  'https://egseekersfrontend-97jl1ayeu-hazemosama2553-gmailcoms-projects.vercel.app',
-  'http://localhost:3000',
-  'https://localhost:3000',
-  process.env.FRONTEND_URL
-].filter(Boolean);
-
+// CORS configuration - Allow all origins for now
 app.use(cors({
-  origin: function (origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
-    
-    if (allowedOrigins.indexOf(origin) !== -1) {
-      callback(null, true);
-    } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
+  origin: true,
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
 
-// Health check endpoint (always available)
+// Health check endpoint
 app.get('/api/health', (req, res) => {
+  console.log('Health check requested');
   res.json({ 
     success: true,
     status: 'healthy',
     message: 'API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
-// Basic auth endpoint
-app.post('/api/auth/login', async (req, res) => {
+// Simple auth endpoint
+app.post('/api/auth/login', (req, res) => {
+  console.log('Login request received');
   try {
     const { email, password } = req.body;
     
     if (!email || !password) {
+      console.log('Missing credentials');
       return res.status(400).json({
         success: false,
         error: 'Email and password are required'
       });
     }
 
-    // Initialize Prisma client
-    const prisma = new PrismaClient();
-    
-    try {
-      // Find user by email
-      const user = await prisma.user.findUnique({
-        where: { email }
-      });
-
-      if (!user) {
-        return res.status(401).json({
-          success: false,
-          error: 'Invalid credentials'
-        });
+    console.log('Login successful for:', email);
+    // Simple mock response for testing
+    res.json({
+      success: true,
+      user: {
+        id: '1',
+        email: email,
+        name: 'Test User',
+        role: 'USER'
       }
-
-      // For now, just return success (you can add password verification later)
-      res.json({
-        success: true,
-        user: {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role
-        }
-      });
-    } catch (dbError) {
-      console.error('Database error:', dbError);
-      res.status(500).json({
-        success: false,
-        error: 'Database connection failed'
-      });
-    } finally {
-      await prisma.$disconnect();
-    }
+    });
   } catch (error) {
     console.error('Auth error:', error);
     res.status(500).json({
@@ -111,12 +62,24 @@ app.post('/api/auth/login', async (req, res) => {
   }
 });
 
+// Catch-all route for testing
+app.get('*', (req, res) => {
+  console.log('Catch-all route hit:', req.path);
+  res.json({
+    success: true,
+    message: 'Serverless function is working',
+    path: req.path,
+    method: req.method
+  });
+});
+
 // Error handling middleware
 app.use((error, req, res, next) => {
   console.error('Server error:', error);
   res.status(500).json({
     success: false,
-    error: 'Internal server error'
+    error: 'Internal server error',
+    message: error.message
   });
 });
 

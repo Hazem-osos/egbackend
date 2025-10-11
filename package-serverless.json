@@ -1,0 +1,12 @@
+{
+  "name": "egseekers-backend-serverless",
+  "version": "1.0.0",
+  "description": "Minimal serverless backend for EgSeekers",
+  "main": "api/index.js",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "serverless-http": "^3.2.0"
+  }
+}
