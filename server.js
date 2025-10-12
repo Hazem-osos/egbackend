@@ -55,6 +55,28 @@ const auth = require('./middleware/auth');
 // Load environment variables
 dotenv.config();
 
+// Construct DATABASE_URL for Prisma using Aiven individual variables
+if (!process.env.DATABASE_URL && process.env.DB_HOST) {
+  const sslCert = process.env.DB_SSL_CA_CERT;
+  
+  // Build DATABASE_URL for Prisma with proper SSL configuration
+  let dbUrl = `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`;
+  
+  // Add SSL parameters
+  const sslParams = new URLSearchParams();
+  sslParams.set('ssl-mode', 'REQUIRED');
+  sslParams.set('ssl-ca', sslCert);
+  sslParams.set('ssl-reject-unauthorized', 'true');
+  
+  dbUrl += '?' + sslParams.toString();
+  
+  process.env.DATABASE_URL = dbUrl;
+  console.log('Constructed DATABASE_URL from Aiven variables');
+  console.log('Database host:', process.env.DB_HOST);
+  console.log('Database port:', process.env.DB_PORT);
+  console.log('Database name:', process.env.DB_DATABASE);
+}
+
 const app = express();
 const prisma = new PrismaClient();
 const port = process.env.PORT || 5001;

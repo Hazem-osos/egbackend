@@ -2,15 +2,25 @@
 
 ## Environment Variables to Set in Railway
 
-### Required Variables:
+### Required Variables (Aiven MySQL):
 ```
-DATABASE_URL=mysql://avnadmin:YOUR_PASSWORD@YOUR_HOST:YOUR_PORT/egseekers?sslaccept=strict
+DB_HOST=hazem-hazemosama2553-256a.b.aivencloud.com
+DB_PORT=11706
+DB_USER=avnadmin
+DB_PASSWORD=YOUR_PASSWORD_FROM_AIVEN
+DB_DATABASE=defaultdb
+DB_SSL_CA_CERT=YOUR_SSL_CERTIFICATE_TEXT_FROM_AIVEN
 NODE_ENV=production
 PORT=10000
 JWT_SECRET=your_jwt_secret_here
 NEXTAUTH_SECRET=your_nextauth_secret_here
 FRONTEND_URL=https://your-frontend-url.com
 ```
+
+### How to Get Aiven Values:
+1. **DB_HOST, DB_PORT, DB_USER, DB_DATABASE** - From Aiven console connection info
+2. **DB_PASSWORD** - Click "Reveal" next to password in Aiven console
+3. **DB_SSL_CA_CERT** - Click "Show" next to CA certificate, copy entire certificate text
 
 ### Optional Variables (if using these features):
 ```
