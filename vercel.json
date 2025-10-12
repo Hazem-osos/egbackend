@@ -1,8 +1,19 @@
 {
   "version": 2,
-  "functions": {
-    "api/minimal.js": {
-      "runtime": "nodejs18.x"
+  "builds": [
+    {
+      "src": "api/minimal.js",
+      "use": "@vercel/node"
     }
-  }
+  ],
+  "routes": [
+    {
+      "src": "/api/(.*)",
+      "dest": "/api/minimal.js"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/api/minimal.js"
+    }
+  ]
 }
