@@ -12,7 +12,7 @@ RUN npm ci
 # Copy source code
 COPY . .
 
-# Generate Prisma client for the correct platform
+# Generate Prisma client for MySQL
 RUN npx prisma generate
 
 # Create uploads directory
