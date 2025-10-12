@@ -1,12 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const { PrismaClient } = require('@prisma/client');
-const auth = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
+// Debug endpoint to check authentication
+router.get('/debug', async (req, res) => {
+  try {
+    res.json({
+      message: 'Notifications debug endpoint',
+      user: req.user ? { id: req.user.id, email: req.user.email } : 'No user',
+      headers: req.headers,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Get all notifications for the authenticated user
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const notifications = await prisma.notification.findMany({
       where: { userId: req.user.id },
@@ -21,7 +34,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get unread notifications count
-router.get('/unread/count', auth, async (req, res) => {
+router.get('/unread/count', async (req, res) => {
   try {
     const count = await prisma.notification.count({
       where: {
@@ -38,7 +51,7 @@ router.get('/unread/count', auth, async (req, res) => {
 });
 
 // Mark a notification as read
-router.put('/:id/read', auth, async (req, res) => {
+router.put('/:id/read', async (req, res) => {
   try {
     const notification = await prisma.notification.update({
       where: {
@@ -56,7 +69,7 @@ router.put('/:id/read', auth, async (req, res) => {
 });
 
 // Mark all notifications as read
-router.put('/read/all', auth, async (req, res) => {
+router.put('/read/all', async (req, res) => {
   try {
     await prisma.notification.updateMany({
       where: {
@@ -74,7 +87,7 @@ router.put('/read/all', auth, async (req, res) => {
 });
 
 // Delete a notification
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     await prisma.notification.delete({
       where: {
@@ -91,7 +104,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Delete all read notifications
-router.delete('/read/all', auth, async (req, res) => {
+router.delete('/read/all', async (req, res) => {
   try {
     await prisma.notification.deleteMany({
       where: {
