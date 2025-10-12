@@ -4,6 +4,24 @@ const { PrismaClient } = require('@prisma/client');
 
 const prisma = new PrismaClient();
 
+// Test endpoint to check if notifications table exists
+router.get('/test', async (req, res) => {
+  try {
+    // Try to count notifications
+    const count = await prisma.notification.count();
+    res.json({
+      message: 'Notifications test endpoint',
+      count: count,
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error accessing notifications table'
+    });
+  }
+});
+
 // Debug endpoint to check authentication
 router.get('/debug', async (req, res) => {
   try {
@@ -21,11 +39,19 @@ router.get('/debug', async (req, res) => {
 // Get all notifications for the authenticated user
 router.get('/', async (req, res) => {
   try {
+    console.log('Notifications route called, user:', req.user);
+    
+    if (!req.user || !req.user.id) {
+      console.log('No user found in request');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const notifications = await prisma.notification.findMany({
       where: { userId: req.user.id },
       orderBy: { createdAt: 'desc' },
     });
 
+    console.log('Found notifications:', notifications.length);
     res.json(notifications);
   } catch (error) {
     console.error('Error fetching notifications:', error);
