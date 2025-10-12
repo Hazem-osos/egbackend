@@ -1,7 +1,17 @@
 {
-  "name": "egseekers-backend-pure",
+  "name": "egseekers-backend-universal",
   "version": "1.0.0",
-  "description": "Pure serverless backend for EgSeekers",
-  "main": "api/pure.js",
-  "type": "commonjs"
+  "description": "Universal backend - works locally and on Vercel",
+  "main": "api/index.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node api/index.js",
+    "dev": "node api/index.js",
+    "local": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "cors": "^2.8.5",
+    "serverless-http": "^3.2.0"
+  }
 }

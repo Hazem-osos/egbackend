@@ -1,8 +1,7 @@
+// Universal server file - works for both local and Vercel
 const express = require('express');
 const cors = require('cors');
-const serverless = require('serverless-http');
 
-// Create Express app
 const app = express();
 
 // Middleware
@@ -26,9 +25,9 @@ app.get('/api/health', (req, res) => {
   res.json({
     success: true,
     status: 'healthy',
-    message: 'Express API is running on Vercel',
+    message: 'Universal server is working',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'production'
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -44,7 +43,6 @@ app.post('/api/auth/login', (req, res) => {
       });
     }
 
-    // Mock authentication for now
     res.json({
       success: true,
       user: {
@@ -57,37 +55,6 @@ app.post('/api/auth/login', (req, res) => {
     });
   } catch (error) {
     console.error('Auth error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
-  }
-});
-
-app.post('/api/auth/register', (req, res) => {
-  try {
-    const { email, password, name } = req.body;
-    
-    if (!email || !password || !name) {
-      return res.status(400).json({
-        success: false,
-        error: 'Email, password, and name are required'
-      });
-    }
-
-    // Mock registration
-    res.json({
-      success: true,
-      user: {
-        id: '2',
-        email: email,
-        name: name,
-        role: 'USER'
-      },
-      message: 'User registered successfully'
-    });
-  } catch (error) {
-    console.error('Registration error:', error);
     res.status(500).json({
       success: false,
       error: 'Internal server error'
@@ -111,44 +78,12 @@ app.get('/api/jobs', (req, res) => {
   });
 });
 
-app.post('/api/jobs', (req, res) => {
-  try {
-    const { title, description, budget } = req.body;
-    
-    if (!title || !description || !budget) {
-      return res.status(400).json({
-        success: false,
-        error: 'Title, description, and budget are required'
-      });
-    }
-
-    res.json({
-      success: true,
-      job: {
-        id: Date.now().toString(),
-        title,
-        description,
-        budget,
-        status: 'open'
-      },
-      message: 'Job created successfully'
-    });
-  } catch (error) {
-    console.error('Job creation error:', error);
-    res.status(500).json({
-      success: false,
-      error: 'Internal server error'
-    });
-  }
-});
-
-// Error handling middleware
+// Error handling
 app.use((error, req, res, next) => {
-  console.error('Express error:', error);
+  console.error('Server error:', error);
   res.status(500).json({
     success: false,
-    error: 'Internal server error',
-    message: error.message
+    error: 'Internal server error'
   });
 });
 
@@ -161,5 +96,15 @@ app.use('*', (req, res) => {
   });
 });
 
-// Export the serverless function
-module.exports.handler = serverless(app);
+// Export for both local and Vercel
+if (process.env.VERCEL) {
+  // Vercel serverless
+  const serverless = require('serverless-http');
+  module.exports = serverless(app);
+} else {
+  // Local development
+  const PORT = process.env.PORT || 5001;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
