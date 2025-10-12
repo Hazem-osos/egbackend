@@ -97,7 +97,11 @@ const allowedOrigins = [
   'https://egseekersfrontend-97jl1ayeu-hazemosama2553-gmailcoms-projects.vercel.app',
   'http://localhost:3000',
   'https://localhost:3000',
-  process.env.FRONTEND_URL
+  process.env.FRONTEND_URL,
+  // Allow any Render frontend URL
+  /^https:\/\/.*\.onrender\.com$/,
+  // Allow any Vercel frontend URL
+  /^https:\/\/.*\.vercel\.app$/
 ].filter(Boolean);
 
 app.use(cors({
@@ -105,7 +109,17 @@ app.use(cors({
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    // Check if origin matches any allowed origin (string or regex)
+    const isAllowed = allowedOrigins.some(allowedOrigin => {
+      if (typeof allowedOrigin === 'string') {
+        return allowedOrigin === origin;
+      } else if (allowedOrigin instanceof RegExp) {
+        return allowedOrigin.test(origin);
+      }
+      return false;
+    });
+    
+    if (isAllowed) {
       callback(null, true);
     } else {
       console.log('CORS blocked origin:', origin);
