@@ -4,8 +4,23 @@ const { PrismaClient } = require('@prisma/client');
 const auth = require('../middleware/auth');
 const prisma = new PrismaClient();
 
+// Test endpoint to check if proposal routes are working
+router.get('/test', async (req, res) => {
+  try {
+    res.json({
+      message: 'Proposal test endpoint',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error in proposal test endpoint'
+    });
+  }
+});
+
 // Get all proposals for a job
-router.get('/job/:jobId', auth, async (req, res) => {
+router.get('/job/:jobId', async (req, res) => {
   try {
     console.log('Fetching proposals for job:', req.params.jobId);
     console.log('User ID:', req.user.id);
@@ -58,7 +73,7 @@ router.get('/job/:jobId', auth, async (req, res) => {
         image: proposal.freelancer.image 
           ? `${process.env.CLOUDINARY_CLOUD_NAME 
               ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${proposal.freelancer.image}` 
-              : `http://localhost:5001/${proposal.freelancer.image}`}`
+              : `https://egbackend-1.onrender.com/${proposal.freelancer.image}`}`
           : null
       }
     }));
@@ -81,7 +96,7 @@ router.get('/job/:jobId', auth, async (req, res) => {
 });
 
 // Get all proposals by a freelancer
-router.get('/freelancer/:freelancerId', auth, async (req, res) => {
+router.get('/freelancer/:freelancerId', async (req, res) => {
   try {
     // Only allow users to view their own proposals or admins
     if (req.params.freelancerId !== req.user.id && req.user.role !== 'ADMIN') {
@@ -123,7 +138,7 @@ router.get('/freelancer/:freelancerId', auth, async (req, res) => {
           image: proposal.job.client.image 
             ? `${process.env.CLOUDINARY_CLOUD_NAME 
                 ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${proposal.job.client.image}` 
-                : `http://localhost:5001/${proposal.job.client.image}`}`
+                : `https://egbackend-1.onrender.com/${proposal.job.client.image}`}`
             : null
         }
       }
@@ -137,8 +152,15 @@ router.get('/freelancer/:freelancerId', auth, async (req, res) => {
 });
 
 // Create a new proposal
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
+    console.log('Proposal creation route called, user:', req.user);
+    
+    if (!req.user || !req.user.id) {
+      console.log('No user found in proposal creation request');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const { jobId, amount, coverLetter } = req.body;
     
     if (!jobId || !amount || !coverLetter) {
@@ -254,7 +276,7 @@ router.post('/', auth, async (req, res) => {
         image: proposal.freelancer.image 
           ? `${process.env.CLOUDINARY_CLOUD_NAME 
               ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${proposal.freelancer.image}` 
-              : `http://localhost:5001/${proposal.freelancer.image}`}`
+              : `https://egbackend-1.onrender.com/${proposal.freelancer.image}`}`
           : null
       }
     };
@@ -368,7 +390,7 @@ router.patch('/:id', auth, async (req, res) => {
         image: proposal.freelancer.image 
           ? `${process.env.CLOUDINARY_CLOUD_NAME 
               ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${proposal.freelancer.image}` 
-              : `http://localhost:5001/${proposal.freelancer.image}`}`
+              : `https://egbackend-1.onrender.com/${proposal.freelancer.image}`}`
           : null
       }
     };
@@ -393,7 +415,7 @@ router.patch('/:id', auth, async (req, res) => {
 });
 
 // Delete a proposal
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     // Check if proposal exists
     const existingProposal = await prisma.proposal.findUnique({
@@ -424,7 +446,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Get a single proposal
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     console.log('Fetching proposal with ID:', req.params.id);
     console.log('User ID:', req.user.id);
@@ -486,7 +508,7 @@ router.get('/:id', auth, async (req, res) => {
         image: proposal.freelancer.image 
           ? `${process.env.CLOUDINARY_CLOUD_NAME 
               ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${proposal.freelancer.image}` 
-              : `http://localhost:5001/${proposal.freelancer.image}`}`
+              : `https://egbackend-1.onrender.com/${proposal.freelancer.image}`}`
           : null
       },
       job: {
@@ -502,7 +524,7 @@ router.get('/:id', auth, async (req, res) => {
           image: proposal.job.client.image 
             ? `${process.env.CLOUDINARY_CLOUD_NAME 
                 ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${proposal.job.client.image}` 
-                : `http://localhost:5001/${proposal.job.client.image}`}`
+                : `https://egbackend-1.onrender.com/${proposal.job.client.image}`}`
             : null
         }
       }
@@ -526,7 +548,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Accept a proposal
-router.post('/:id/accept', auth, async (req, res) => {
+router.post('/:id/accept', async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -651,7 +673,7 @@ router.post('/:id/accept', auth, async (req, res) => {
 });
 
 // Reject a proposal
-router.put('/:proposalId/reject', auth, async (req, res) => {
+router.put('/:proposalId/reject', async (req, res) => {
   try {
     const { proposalId } = req.params;
 
