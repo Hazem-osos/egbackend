@@ -740,7 +740,7 @@ router.put('/:proposalId/reject', async (req, res) => {
         image: updatedProposal.freelancer.image 
           ? `${process.env.CLOUDINARY_CLOUD_NAME 
               ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${updatedProposal.freelancer.image}` 
-              : `http://localhost:5001/${updatedProposal.freelancer.image}`}`
+              : `https://egbackend-1.onrender.com/${updatedProposal.freelancer.image}`}`
           : null
       }
     };

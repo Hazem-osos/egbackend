@@ -5,8 +5,15 @@ const auth = require('../middleware/auth');
 const router = express.Router();
 const prisma = new PrismaClient();
 
+// Test endpoint
+router.get('/test', (req, res) => {
+  console.log('GET /api/jobs/test - Test endpoint hit');
+  res.json({ message: 'Job routes are working!', timestamp: new Date().toISOString() });
+});
+
 // Get all jobs with optional filters
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
+  console.log('GET /api/jobs - Fetching jobs');
   try {
     const { category, budget, skills, status, search, page = 1, limit = 10 } = req.query;
     const where = {};
@@ -66,7 +73,8 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get a single job by ID
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
+  console.log(`GET /api/jobs/${req.params.id} - Fetching job details`);
   try {
     const job = await prisma.job.findUnique({
       where: { id: req.params.id },
@@ -104,7 +112,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Create a new job
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     // Extract and validate required fields
     const { 
@@ -161,7 +169,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update a job
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const job = await prisma.job.findUnique({
       where: { id: req.params.id }
@@ -196,7 +204,7 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // Delete a job
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const job = await prisma.job.findUnique({
       where: { id: req.params.id }
@@ -221,7 +229,7 @@ router.delete('/:id', auth, async (req, res) => {
 });
 
 // Submit a proposal
-router.post('/:id/proposals', auth, async (req, res) => {
+router.post('/:id/proposals', async (req, res) => {
   try {
     const job = await prisma.job.findUnique({
       where: { id: req.params.id }
@@ -276,7 +284,7 @@ router.post('/:id/proposals', auth, async (req, res) => {
 });
 
 // Accept a proposal
-router.put('/:jobId/proposals/:proposalId/accept', auth, async (req, res) => {
+router.put('/:jobId/proposals/:proposalId/accept', async (req, res) => {
   try {
     const job = await prisma.job.findUnique({
       where: { id: req.params.jobId }
@@ -359,7 +367,7 @@ router.put('/:jobId/proposals/:proposalId/accept', auth, async (req, res) => {
 });
 
 // Reject a proposal
-router.put('/:jobId/proposals/:proposalId/reject', auth, async (req, res) => {
+router.put('/:jobId/proposals/:proposalId/reject', async (req, res) => {
   try {
     const job = await prisma.job.findUnique({
       where: { id: req.params.jobId }
@@ -437,7 +445,7 @@ router.put('/:jobId/proposals/:proposalId/reject', auth, async (req, res) => {
 });
 
 // Get jobs by freelancer ID
-router.get('/freelancer/:freelancerId', auth, async (req, res) => {
+router.get('/freelancer/:freelancerId', async (req, res) => {
   try {
     // Check if the requesting user is the freelancer or an admin
     if (req.user.id !== req.params.freelancerId && req.user.role !== 'ADMIN') {
@@ -518,7 +526,7 @@ router.patch('/:id/status', auth, async (req, res) => {
 });
 
 // Check if job has active contract
-router.get('/:id/contract', auth, async (req, res) => {
+router.get('/:id/contract', async (req, res) => {
   try {
     const contract = await prisma.contract.findFirst({
       where: {

@@ -12,7 +12,7 @@ const transformImageUrl = (image) => {
   if (!image) return null;
   return process.env.CLOUDINARY_CLOUD_NAME 
     ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${image}` 
-    : `http://localhost:5001/${image}`;
+    : `https://egbackend-1.onrender.com/${image}`;
 };
 
 // Get user's conversations

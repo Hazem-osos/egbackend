@@ -354,7 +354,7 @@ router.get('/applications/recent', auth, async (req, res) => {
             image: app.freelancer.image 
               ? `${process.env.CLOUDINARY_CLOUD_NAME 
                   ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${app.freelancer.image}` 
-                  : `http://localhost:5001/${app.freelancer.image}`}`
+                  : `https://egbackend-1.onrender.com/${app.freelancer.image}`}`
               : null
           }
         };

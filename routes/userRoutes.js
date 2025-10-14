@@ -82,12 +82,12 @@ router.get('/profile', auth, async (req, res) => {
       ...user,
       image: user.image ? (process.env.CLOUDINARY_CLOUD_NAME 
         ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${user.image}` 
-        : `http://localhost:5001/${user.image}`) : null,
+        : `https://egbackend-1.onrender.com/${user.image}`) : null,
       portfolio: user.portfolio ? user.portfolio.map(item => ({
         ...item,
         imageUrl: item.imageUrl ? (process.env.CLOUDINARY_CLOUD_NAME 
           ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${item.imageUrl}` 
-          : `http://localhost:5001/${item.imageUrl}`) : null
+          : `https://egbackend-1.onrender.com/${item.imageUrl}`) : null
       })) : [],
       reviews: user.reviews ? user.reviews.map(review => ({
         ...review,
@@ -95,7 +95,7 @@ router.get('/profile', auth, async (req, res) => {
           ...review.user,
           image: review.user.image ? (process.env.CLOUDINARY_CLOUD_NAME 
             ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${review.user.image}` 
-            : `http://localhost:5001/${review.user.image}`) : null
+            : `https://egbackend-1.onrender.com/${review.user.image}`) : null
         }
       })) : []
     };
@@ -138,7 +138,7 @@ router.get('/:id', auth, async (req, res) => {
       ...user,
       image: user.image ? (process.env.CLOUDINARY_CLOUD_NAME 
         ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${user.image}` 
-        : `http://localhost:5001/${user.image}`) : null
+        : `https://egbackend-1.onrender.com/${user.image}`) : null
     };
 
     console.log('User found:', id);
@@ -207,7 +207,7 @@ router.put('/profile', auth, async (req, res) => {
       ...user,
       image: user.image ? (process.env.CLOUDINARY_CLOUD_NAME 
         ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${user.image}` 
-        : `http://localhost:5001/${user.image}`) : null
+        : `https://egbackend-1.onrender.com/${user.image}`) : null
     };
 
     res.json(transformedUser);
