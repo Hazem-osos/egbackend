@@ -60,15 +60,19 @@ router.get('/', async (req, res) => {
     ]);
 
     res.json({
-      jobs,
-      pagination: {
-        total,
-        pages: Math.ceil(total / parseInt(limit)),
-        current: parseInt(page)
+      success: true,
+      data: {
+        jobs,
+        pagination: {
+          total,
+          pages: Math.ceil(total / parseInt(limit)),
+          current: parseInt(page)
+        }
       }
     });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error('Error fetching jobs:', error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
@@ -102,12 +106,13 @@ router.get('/:id', async (req, res) => {
     });
 
     if (!job) {
-      return res.status(404).json({ error: 'Job not found' });
+      return res.status(404).json({ success: false, error: 'Job not found' });
     }
 
-    res.json(job);
+    res.json({ success: true, data: job });
   } catch (error) {
-    res.status(500).json({ error: error.message });
+    console.error(`Error fetching job ${req.params.id}:`, error);
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
