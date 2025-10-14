@@ -65,6 +65,8 @@ router.post('/purchase', auth, async (req, res) => {
     const { packageId } = req.body;
     const userId = req.user.id;
 
+    console.log(`Purchase request - User: ${userId}, Package: ${packageId}`);
+
     // Get the package details
     const packages = [
       { id: 1, connects: 10, price: 100 },
@@ -74,45 +76,52 @@ router.post('/purchase', auth, async (req, res) => {
 
     const selectedPackage = packages.find(p => p.id === packageId);
     if (!selectedPackage) {
+      console.log(`Invalid package selected: ${packageId}`);
       return res.status(400).json({ error: 'Invalid package selected' });
     }
 
-    // Create a payment record
-    const payment = await prisma.payment.create({
+    console.log(`Selected package: ${selectedPackage.connects} connects for ${selectedPackage.price} EGP`);
+
+    // Create a connect transaction record
+    const transaction = await prisma.connectTransaction.create({
       data: {
-        userId,
-        amount: selectedPackage.price,
-        currency: 'EGP',
+        amount: selectedPackage.connects,
+        price: selectedPackage.price,
         status: 'PENDING',
-        type: 'CONNECT_PURCHASE',
-        metadata: {
-          packageId,
-          connects: selectedPackage.connects
-        }
+        paymentMethod: 'credit_card',
+        userId: userId
       }
     });
 
     // TODO: Integrate with payment gateway (e.g., Stripe, PayPal)
     // For now, we'll simulate a successful payment
-    const updatedPayment = await prisma.payment.update({
-      where: { id: payment.id },
-      data: { status: 'COMPLETED' }
-    });
-
-    // Add connects to user's account
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: {
-        connects: {
-          increment: selectedPackage.connects
-        }
+    const updatedTransaction = await prisma.connectTransaction.update({
+      where: { id: transaction.id },
+      data: { 
+        status: 'COMPLETED',
+        transactionId: `txn_${Date.now()}`
       }
     });
 
+    console.log(`Transaction created: ${transaction.id}, Status: ${updatedTransaction.status}`);
+
+    // Add connects to user's account
+    const connectRecord = await prisma.connect.create({
+      data: {
+        amount: selectedPackage.connects,
+        price: selectedPackage.price,
+        description: `Purchased ${selectedPackage.connects} connects`,
+        userId: userId,
+        isActive: true
+      }
+    });
+
+    console.log(`Connects added: ${connectRecord.amount} connects for user ${userId}`);
+
     res.json({
       success: true,
-      payment: updatedPayment,
-      connects: user.connects
+      transaction: updatedTransaction,
+      connects: connectRecord
     });
   } catch (error) {
     console.error('Error purchasing connects:', error);
