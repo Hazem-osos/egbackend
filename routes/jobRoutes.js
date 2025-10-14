@@ -40,6 +40,9 @@ router.get('/', async (req, res) => {
 
     const skip = (parseInt(page) - 1) * parseInt(limit);
 
+    console.log('Query parameters:', { category, budget, skills, status, search, page, limit });
+    console.log('Where clause:', where);
+
     const [jobs, total] = await Promise.all([
       prisma.job.findMany({
         where,
@@ -58,6 +61,8 @@ router.get('/', async (req, res) => {
       }),
       prisma.job.count({ where })
     ]);
+
+    console.log(`Found ${jobs.length} jobs out of ${total} total`);
 
     res.json({
       success: true,
@@ -139,6 +144,21 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ error: "Missing required fields" });
     }
 
+    console.log('Creating job with data:', {
+      title,
+      description,
+      category,
+      budget: parseFloat(budget),
+      skills: Array.isArray(skills) ? skills : JSON.parse(skills),
+      deadline: deadline ? new Date(deadline) : null,
+      jobType,
+      experience,
+      duration,
+      location,
+      status: status || "OPEN",
+      clientId: req.user.id
+    });
+
     // Create the job with all fields
     const job = await prisma.job.create({
       data: {
@@ -166,10 +186,12 @@ router.post('/', async (req, res) => {
       }
     });
 
-    res.status(201).json(job);
+    console.log('Job created successfully:', job);
+
+    res.status(201).json({ success: true, data: job });
   } catch (error) {
     console.error('Error creating job:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ success: false, error: error.message });
   }
 });
 
