@@ -23,9 +23,10 @@ router.get('/test', async (req, res) => {
 });
 
 // Get all contracts for the current user
-router.get('/', async (req, res) => {
+router.get('/', auth, async (req, res) => {
   try {
     console.log('Contracts route called, user:', req.user);
+    console.log('Request headers:', req.headers);
     
     if (!req.user || !req.user.id) {
       console.log('No user found in contracts request');
@@ -60,6 +61,10 @@ router.get('/', async (req, res) => {
         createdAt: 'desc'
       }
     });
+    
+    console.log(`Found ${contracts.length} contracts for user ${userId}`);
+    console.log('Contracts:', contracts.map(c => ({ id: c.id, status: c.status, proposalId: c.proposalId })));
+    
     res.json({
       success: true,
       data: contracts
@@ -74,7 +79,7 @@ router.get('/', async (req, res) => {
 });
 
 // Get contract by proposal ID
-router.get('/proposal/:proposalId', async (req, res) => {
+router.get('/proposal/:proposalId', auth, async (req, res) => {
   try {
     const { proposalId } = req.params;
     const userId = req.user.id;
@@ -204,7 +209,7 @@ const handleError = (error, res) => {
 };
 
 // Create a new contract
-router.post('/', async (req, res) => {
+router.post('/', auth, async (req, res) => {
   try {
     const { proposalId, terms, startDate, endDate, amount } = req.body;
     const userId = req.user.id;
@@ -307,7 +312,7 @@ router.post('/', async (req, res) => {
 });
 
 // Accept a contract
-router.post('/:id/accept', async (req, res) => {
+router.post('/:id/accept', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -412,7 +417,7 @@ router.post('/:id/accept', async (req, res) => {
 });
 
 // Decline a contract
-router.post('/:id/decline', async (req, res) => {
+router.post('/:id/decline', auth, async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -512,7 +517,7 @@ router.post('/:id/decline', async (req, res) => {
 });
 
 // Complete a contract
-router.put('/:contractId/complete', async (req, res) => {
+router.put('/:contractId/complete', auth, async (req, res) => {
   try {
     const { contractId } = req.params;
     const { user } = req;
@@ -595,7 +600,7 @@ router.put('/:contractId/complete', async (req, res) => {
 });
 
 // Submit work for a contract
-router.post('/:contractId/submit', upload.single('file'), multerErrorHandler, async (req, res) => {
+router.post('/:contractId/submit', auth, upload.single('file'), multerErrorHandler, async (req, res) => {
   try {
     console.log('[Contract] Starting work submission process');
     console.log('[Contract] Request body:', {
@@ -791,7 +796,7 @@ router.post('/:contractId/submit', upload.single('file'), multerErrorHandler, as
 });
 
 // Review submitted work
-router.post('/:contractId/review', async (req, res) => {
+router.post('/:contractId/review', auth, async (req, res) => {
   try {
     const { contractId } = req.params;
     const { accepted, feedback } = req.body;

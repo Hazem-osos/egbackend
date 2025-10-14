@@ -216,10 +216,19 @@ router.get('/me', auth, async (req, res) => {
     const formattedUser = {
       id: userWithoutPassword.id,
       email: userWithoutPassword.email,
-      firstName: userWithoutPassword.name.split(' ')[0],
-      lastName: userWithoutPassword.name.split(' ').slice(1).join(' '),
+      name: userWithoutPassword.name,
       role: userWithoutPassword.role,
-      image: userWithoutPassword.image
+      image: userWithoutPassword.image ? (process.env.CLOUDINARY_CLOUD_NAME 
+        ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${userWithoutPassword.image}` 
+        : `https://egbackend-1.onrender.com/${userWithoutPassword.image}`) : null,
+      bio: userWithoutPassword.bio,
+      skills: userWithoutPassword.skills,
+      hourlyRate: userWithoutPassword.hourlyRate,
+      title: userWithoutPassword.title,
+      location: userWithoutPassword.location,
+      website: userWithoutPassword.website,
+      linkedin: userWithoutPassword.linkedin,
+      github: userWithoutPassword.github
     };
     
     res.json(formattedUser);
