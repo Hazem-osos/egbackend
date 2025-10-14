@@ -5,14 +5,37 @@ const auth = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// Get all certifications for the authenticated user
-router.get('/', auth, async (req, res) => {
+// Test endpoint to check if certification routes are working
+router.get('/test', async (req, res) => {
   try {
+    res.json({
+      message: 'Certification test endpoint',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error in certification test endpoint'
+    });
+  }
+});
+
+// Get all certifications for the authenticated user
+router.get('/', async (req, res) => {
+  try {
+    console.log('Certifications route called, user:', req.user);
+    
+    if (!req.user || !req.user.id) {
+      console.log('No user found in certifications request');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const certifications = await prisma.certification.findMany({
       where: { userId: req.user.id },
       orderBy: { issueDate: 'desc' },
     });
 
+    console.log('Found certifications:', certifications.length);
     res.json(certifications);
   } catch (error) {
     console.error('Error fetching certifications:', error);
@@ -21,7 +44,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get a specific certification
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const certification = await prisma.certification.findUnique({
       where: {
@@ -42,7 +65,7 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Create a new certification
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const {
       name,
@@ -73,7 +96,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update a certification
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const {
       name,
@@ -107,7 +130,7 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // Delete a certification
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     await prisma.certification.delete({
       where: {

@@ -8,6 +8,21 @@ const auth = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
+// Test endpoint to check if verification routes are working
+router.get('/test', async (req, res) => {
+  try {
+    res.json({
+      message: 'Verification test endpoint',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error in verification test endpoint'
+    });
+  }
+});
+
 // Configure multer for file uploads
 const storage = multer.diskStorage({
   destination: async function (req, file, cb) {
@@ -43,10 +58,18 @@ const upload = multer({
 // Get verification status
 router.get('/status', async (req, res) => {
   try {
+    console.log('Verification status route called, user:', req.user);
+    
+    if (!req.user || !req.user.id) {
+      console.log('No user found in verification request');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const verification = await prisma.idVerification.findUnique({
       where: { userId: req.user.id }
     });
 
+    console.log('Found verification:', verification ? verification.status : 'NOT_SUBMITTED');
     res.json({
       status: verification ? verification.status : 'NOT_SUBMITTED',
       details: verification

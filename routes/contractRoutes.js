@@ -7,10 +7,36 @@ const multer = require('multer');
 const { validateContract, validateContractSubmission, formatValidationError, fileValidation } = require('../utils/validation');
 const { uploadFile } = require('../utils/cloudinary');
 
-// Get all contracts for the current user
-router.get('/', auth, async (req, res) => {
+// Test endpoint to check if contract routes are working
+router.get('/test', async (req, res) => {
   try {
+    res.json({
+      message: 'Contract test endpoint',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error in contract test endpoint'
+    });
+  }
+});
+
+// Get all contracts for the current user
+router.get('/', async (req, res) => {
+  try {
+    console.log('Contracts route called, user:', req.user);
+    
+    if (!req.user || !req.user.id) {
+      console.log('No user found in contracts request');
+      return res.status(401).json({ 
+        success: false,
+        error: 'User not authenticated' 
+      });
+    }
+
     const userId = req.user.id;
+    console.log('Fetching contracts for user:', userId);
     const contracts = await prisma.contract.findMany({
       where: {
         OR: [
@@ -48,7 +74,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Get contract by proposal ID
-router.get('/proposal/:proposalId', auth, async (req, res) => {
+router.get('/proposal/:proposalId', async (req, res) => {
   try {
     const { proposalId } = req.params;
     const userId = req.user.id;
@@ -178,7 +204,7 @@ const handleError = (error, res) => {
 };
 
 // Create a new contract
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { proposalId, terms, startDate, endDate, amount } = req.body;
     const userId = req.user.id;
@@ -281,7 +307,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Accept a contract
-router.post('/:id/accept', auth, async (req, res) => {
+router.post('/:id/accept', async (req, res) => {
   try {
     const { id } = req.params;
     const userId = req.user.id;
@@ -386,7 +412,7 @@ router.post('/:id/accept', auth, async (req, res) => {
 });
 
 // Decline a contract
-router.post('/:id/decline', auth, async (req, res) => {
+router.post('/:id/decline', async (req, res) => {
   try {
     const { id } = req.params;
     const { reason } = req.body;
@@ -569,7 +595,7 @@ router.put('/:contractId/complete', async (req, res) => {
 });
 
 // Submit work for a contract
-router.post('/:contractId/submit', auth, upload.single('file'), multerErrorHandler, async (req, res) => {
+router.post('/:contractId/submit', upload.single('file'), multerErrorHandler, async (req, res) => {
   try {
     console.log('[Contract] Starting work submission process');
     console.log('[Contract] Request body:', {
@@ -765,7 +791,7 @@ router.post('/:contractId/submit', auth, upload.single('file'), multerErrorHandl
 });
 
 // Review submitted work
-router.post('/:contractId/review', auth, async (req, res) => {
+router.post('/:contractId/review', async (req, res) => {
   try {
     const { contractId } = req.params;
     const { accepted, feedback } = req.body;

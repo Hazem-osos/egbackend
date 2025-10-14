@@ -5,8 +5,23 @@ const auth = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
+// Test endpoint to check if portfolio routes are working
+router.get('/test', async (req, res) => {
+  try {
+    res.json({
+      message: 'Portfolio test endpoint',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error in portfolio test endpoint'
+    });
+  }
+});
+
 // Get a single portfolio item
-router.get('/:id', auth, async (req, res) => {
+router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -35,7 +50,7 @@ router.get('/:id', auth, async (req, res) => {
     // Transform image URL to include base URL
     const transformedPortfolio = {
       ...portfolio,
-      imageUrl: portfolio.imageUrl ? `http://localhost:5001/${portfolio.imageUrl}` : null
+      imageUrl: portfolio.imageUrl ? `https://egbackend-1.onrender.com/${portfolio.imageUrl}` : null
     };
 
     res.json(transformedPortfolio);
@@ -50,8 +65,15 @@ router.get('/:id', auth, async (req, res) => {
 });
 
 // Get user's portfolio items
-router.get('/', auth, async (req, res) => {
+router.get('/', async (req, res) => {
   try {
+    console.log('Portfolio route called, user:', req.user);
+    
+    if (!req.user || !req.user.id) {
+      console.log('No user found in portfolio request');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     console.log('Fetching portfolios for user:', req.user.id);
     
     const portfolios = await prisma.portfolio.findMany({
@@ -71,7 +93,7 @@ router.get('/', auth, async (req, res) => {
     // Transform image URLs to include the base URL
     const transformedPortfolios = portfolios.map(portfolio => ({
       ...portfolio,
-      imageUrl: portfolio.imageUrl ? `http://localhost:5001/${portfolio.imageUrl}` : null
+      imageUrl: portfolio.imageUrl ? `https://egbackend-1.onrender.com/${portfolio.imageUrl}` : null
     }));
 
     res.json(transformedPortfolios);
@@ -86,7 +108,7 @@ router.get('/', auth, async (req, res) => {
 });
 
 // Create portfolio item
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const { title, description, imageUrl, projectUrl } = req.body;
 
@@ -118,7 +140,7 @@ router.post('/', auth, async (req, res) => {
     // Transform image URL to include base URL
     const transformedPortfolio = {
       ...portfolio,
-      imageUrl: portfolio.imageUrl ? `http://localhost:5001/${portfolio.imageUrl}` : null
+      imageUrl: portfolio.imageUrl ? `https://egbackend-1.onrender.com/${portfolio.imageUrl}` : null
     };
 
     res.status(201).json(transformedPortfolio);
@@ -133,7 +155,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Update portfolio item
-router.put('/:id', auth, async (req, res) => {
+router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     const { title, description, imageUrl, projectUrl } = req.body;
@@ -176,7 +198,7 @@ router.put('/:id', auth, async (req, res) => {
     // Transform image URL to include base URL
     const transformedPortfolio = {
       ...updatedPortfolio,
-      imageUrl: updatedPortfolio.imageUrl ? `http://localhost:5001/${updatedPortfolio.imageUrl}` : null
+      imageUrl: updatedPortfolio.imageUrl ? `https://egbackend-1.onrender.com/${updatedPortfolio.imageUrl}` : null
     };
 
     res.json(transformedPortfolio);
@@ -191,7 +213,7 @@ router.put('/:id', auth, async (req, res) => {
 });
 
 // Delete portfolio item
-router.delete('/:id', auth, async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
 

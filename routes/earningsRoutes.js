@@ -5,9 +5,31 @@ const auth = require('../middleware/auth');
 
 const prisma = new PrismaClient();
 
-// Get earnings summary for freelancer
-router.get('/summary', auth, async (req, res) => {
+// Test endpoint to check if earnings routes are working
+router.get('/test', async (req, res) => {
   try {
+    res.json({
+      message: 'Earnings test endpoint',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      message: 'Error in earnings test endpoint'
+    });
+  }
+});
+
+// Get earnings summary for freelancer
+router.get('/summary', async (req, res) => {
+  try {
+    console.log('Earnings summary route called, user:', req.user);
+    
+    if (!req.user || !req.user.id) {
+      console.log('No user found in earnings request');
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const userId = req.user.id;
     const userRole = req.user.role;
 
@@ -55,7 +77,7 @@ router.get('/summary', auth, async (req, res) => {
 });
 
 // Get earnings transactions
-router.get('/transactions', auth, async (req, res) => {
+router.get('/transactions', async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
@@ -100,7 +122,7 @@ router.get('/transactions', auth, async (req, res) => {
 });
 
 // Get earnings report
-router.get('/report', auth, async (req, res) => {
+router.get('/report', async (req, res) => {
   try {
     const userId = req.user.id;
     const userRole = req.user.role;
