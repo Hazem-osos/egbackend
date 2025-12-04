@@ -16,7 +16,6 @@ services:
     rootDir: .
     dockerfilePath: .
     dockerContext: .
-    dockerCommand: npm start
     dockerfile: |
       FROM node:18-alpine
       WORKDIR /app
