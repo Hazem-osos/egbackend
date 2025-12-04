@@ -171,14 +171,21 @@ const allowedOrigins = [
   process.env.FRONTEND_URL,
   // Allow any Render frontend URL
   /^https:\/\/.*\.onrender\.com$/,
-  // Allow any Vercel frontend URL
-  /^https:\/\/.*\.vercel\.app$/
+  // Allow any Vercel frontend URL (including preview deployments)
+  /^https:\/\/.*\.vercel\.app$/,
+  /^https:\/\/.*-.*\.vercel\.app$/,
+  // Allow localhost in development
+  /^http:\/\/localhost:\d+$/,
+  /^https:\/\/localhost:\d+$/
 ].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
-    if (!origin) return callback(null, true);
+    if (!origin) {
+      console.log('CORS: Allowing request with no origin');
+      return callback(null, true);
+    }
     
     // Check if origin matches any allowed origin (string or regex)
     const isAllowed = allowedOrigins.some(allowedOrigin => {
@@ -191,10 +198,18 @@ app.use(cors({
     });
     
     if (isAllowed) {
+      console.log('CORS: Allowing origin:', origin);
       callback(null, true);
     } else {
-      console.log('CORS blocked origin:', origin);
-      callback(new Error('Not allowed by CORS'));
+      console.log('CORS: Blocked origin:', origin);
+      console.log('CORS: Allowed origins:', allowedOrigins);
+      // In development, allow all origins for easier debugging
+      if (process.env.NODE_ENV === 'development') {
+        console.log('CORS: Development mode - allowing origin');
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
     }
   },
   credentials: true,
