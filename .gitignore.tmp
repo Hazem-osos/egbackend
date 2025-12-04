@@ -1,0 +1,40 @@
+
+# Build outputs
+# Coverage directory used by tools like istanbul
+# Dependencies
+# Environment variables
+# IDE files
+# Logs
+# OS generated files
+# Prisma
+# Runtime data
+*.log
+*.pid
+*.pid.lock
+*.seed
+*.swo
+*.swp
+.DS_Store
+.DS_Store?
+.Spotlight-V100
+.Trashes
+._*
+.env.development
+.env.local
+.env.production
+.idea/
+.next/
+.vscode/
+Thumbs.db
+backend/.env
+build/
+coverage/
+dist/
+ehthumbs.db
+logs/
+node_modules/
+npm-debug.log*
+pids/
+prisma/migrations/
+yarn-debug.log*
+yarn-error.log*
