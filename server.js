@@ -56,10 +56,22 @@ const auth = require('./middleware/auth');
 dotenv.config();
 
 // Construct DATABASE_URL for Prisma using Aiven individual variables
+// Clean and validate existing DATABASE_URL (remove quotes, trim whitespace)
+if (process.env.DATABASE_URL) {
+  process.env.DATABASE_URL = process.env.DATABASE_URL.trim().replace(/^["']|["']$/g, '');
+}
+
 // Check if DATABASE_URL is missing or invalid (doesn't start with mysql://)
 const needsConstruction = !process.env.DATABASE_URL || 
                           !process.env.DATABASE_URL.trim() || 
                           !process.env.DATABASE_URL.startsWith('mysql://');
+
+console.log('DATABASE_URL check:', {
+  exists: !!process.env.DATABASE_URL,
+  value: process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 30) + '...' : 'NOT SET',
+  needsConstruction,
+  hasDBHost: !!process.env.DB_HOST
+});
 
 if (needsConstruction && process.env.DB_HOST) {
   const sslCert = process.env.DB_SSL_CA_CERT;
@@ -71,7 +83,7 @@ if (needsConstruction && process.env.DB_HOST) {
   if (sslCert) {
     const sslParams = new URLSearchParams();
     sslParams.set('ssl-mode', 'REQUIRED');
-    sslParams.set('ssl-ca', sslCert);
+    sslParams.set('ssl-ca', sslCert.trim().replace(/^["']|["']$/g, ''));
     sslParams.set('ssl-reject-unauthorized', 'true');
     
     dbUrl += '?' + sslParams.toString();
@@ -81,29 +93,38 @@ if (needsConstruction && process.env.DB_HOST) {
   }
   
   process.env.DATABASE_URL = dbUrl;
-  console.log('Constructed DATABASE_URL from Aiven variables');
-  console.log('Database host:', process.env.DB_HOST);
-  console.log('Database port:', process.env.DB_PORT);
-  console.log('Database name:', process.env.DB_DATABASE);
+  console.log('✓ Constructed DATABASE_URL from Aiven variables');
+  console.log('  Database host:', process.env.DB_HOST);
+  console.log('  Database port:', process.env.DB_PORT);
+  console.log('  Database name:', process.env.DB_DATABASE);
 } else if (needsConstruction && !process.env.DB_HOST) {
-  console.error('ERROR: DATABASE_URL is missing or invalid, and individual DB variables are not set.');
-  console.error('Current DATABASE_URL value:', process.env.DATABASE_URL ? `"${process.env.DATABASE_URL.substring(0, 20)}..."` : 'NOT SET');
-  console.error('DB_HOST:', process.env.DB_HOST || 'NOT SET');
-  console.error('Please set either:');
-  console.error('  - DATABASE_URL (must start with mysql://)');
-  console.error('  - OR DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_DATABASE (and optionally DB_SSL_CA_CERT)');
+  console.error('✗ ERROR: DATABASE_URL is missing or invalid, and individual DB variables are not set.');
+  console.error('  Current DATABASE_URL value:', process.env.DATABASE_URL ? `"${process.env.DATABASE_URL.substring(0, 50)}..."` : 'NOT SET');
+  console.error('  DB_HOST:', process.env.DB_HOST || 'NOT SET');
+  console.error('  DB_USER:', process.env.DB_USER || 'NOT SET');
+  console.error('  DB_PORT:', process.env.DB_PORT || 'NOT SET');
+  console.error('  DB_DATABASE:', process.env.DB_DATABASE || 'NOT SET');
+  console.error('');
+  console.error('Please set in Render environment variables either:');
+  console.error('  - DATABASE_URL=mysql://user:pass@host:port/db?ssl-mode=REQUIRED');
+  console.error('  - OR DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_DATABASE');
   process.exit(1);
 }
 
 // Final validation before PrismaClient instantiation
-if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.trim() || !process.env.DATABASE_URL.startsWith('mysql://')) {
-  console.error('FATAL: DATABASE_URL is still invalid after construction attempt');
-  console.error('DATABASE_URL value:', process.env.DATABASE_URL ? `"${process.env.DATABASE_URL}"` : 'NOT SET');
+const finalDbUrl = process.env.DATABASE_URL ? process.env.DATABASE_URL.trim() : '';
+if (!finalDbUrl || !finalDbUrl.startsWith('mysql://')) {
+  console.error('✗ FATAL: DATABASE_URL is still invalid after construction attempt');
+  console.error('  DATABASE_URL value:', finalDbUrl || 'NOT SET');
+  console.error('  Length:', finalDbUrl ? finalDbUrl.length : 0);
+  console.error('  Starts with mysql://:', finalDbUrl.startsWith('mysql://'));
   process.exit(1);
 }
 
-console.log('DATABASE_URL is valid, starting Prisma client...');
-console.log('DATABASE_URL preview:', process.env.DATABASE_URL.substring(0, 30) + '...');
+// Ensure clean DATABASE_URL
+process.env.DATABASE_URL = finalDbUrl;
+console.log('✓ DATABASE_URL is valid, starting Prisma client...');
+console.log('  DATABASE_URL preview:', finalDbUrl.substring(0, 40) + '...');
 
 const app = express();
 const prisma = new PrismaClient();
