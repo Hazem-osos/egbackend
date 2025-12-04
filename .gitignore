@@ -1,5 +1,4 @@
 # Environment variables
-.env
 .env.local
 .env.production
 .env.development
@@ -46,4 +45,3 @@ Thumbs.db
 # Prisma
 prisma/migrations/
 backend/.env
-.env
