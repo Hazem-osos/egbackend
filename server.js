@@ -56,25 +56,41 @@ const auth = require('./middleware/auth');
 dotenv.config();
 
 // Construct DATABASE_URL for Prisma using Aiven individual variables
-if (!process.env.DATABASE_URL && process.env.DB_HOST) {
+// Check if DATABASE_URL is missing or invalid (doesn't start with mysql://)
+const needsConstruction = !process.env.DATABASE_URL || 
+                          !process.env.DATABASE_URL.trim() || 
+                          !process.env.DATABASE_URL.startsWith('mysql://');
+
+if (needsConstruction && process.env.DB_HOST) {
   const sslCert = process.env.DB_SSL_CA_CERT;
   
   // Build DATABASE_URL for Prisma with proper SSL configuration
   let dbUrl = `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`;
   
-  // Add SSL parameters
-  const sslParams = new URLSearchParams();
-  sslParams.set('ssl-mode', 'REQUIRED');
-  sslParams.set('ssl-ca', sslCert);
-  sslParams.set('ssl-reject-unauthorized', 'true');
-  
-  dbUrl += '?' + sslParams.toString();
+  // Add SSL parameters if SSL cert is provided
+  if (sslCert) {
+    const sslParams = new URLSearchParams();
+    sslParams.set('ssl-mode', 'REQUIRED');
+    sslParams.set('ssl-ca', sslCert);
+    sslParams.set('ssl-reject-unauthorized', 'true');
+    
+    dbUrl += '?' + sslParams.toString();
+  } else {
+    // Still add ssl-mode even without cert
+    dbUrl += '?ssl-mode=REQUIRED';
+  }
   
   process.env.DATABASE_URL = dbUrl;
   console.log('Constructed DATABASE_URL from Aiven variables');
   console.log('Database host:', process.env.DB_HOST);
   console.log('Database port:', process.env.DB_PORT);
   console.log('Database name:', process.env.DB_DATABASE);
+} else if (needsConstruction && !process.env.DB_HOST) {
+  console.error('ERROR: DATABASE_URL is missing or invalid, and individual DB variables are not set.');
+  console.error('Please set either:');
+  console.error('  - DATABASE_URL (must start with mysql://)');
+  console.error('  - OR DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_DATABASE (and optionally DB_SSL_CA_CERT)');
+  process.exit(1);
 }
 
 const app = express();
