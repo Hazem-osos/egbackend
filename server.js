@@ -87,11 +87,23 @@ if (needsConstruction && process.env.DB_HOST) {
   console.log('Database name:', process.env.DB_DATABASE);
 } else if (needsConstruction && !process.env.DB_HOST) {
   console.error('ERROR: DATABASE_URL is missing or invalid, and individual DB variables are not set.');
+  console.error('Current DATABASE_URL value:', process.env.DATABASE_URL ? `"${process.env.DATABASE_URL.substring(0, 20)}..."` : 'NOT SET');
+  console.error('DB_HOST:', process.env.DB_HOST || 'NOT SET');
   console.error('Please set either:');
   console.error('  - DATABASE_URL (must start with mysql://)');
   console.error('  - OR DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_DATABASE (and optionally DB_SSL_CA_CERT)');
   process.exit(1);
 }
+
+// Final validation before PrismaClient instantiation
+if (!process.env.DATABASE_URL || !process.env.DATABASE_URL.trim() || !process.env.DATABASE_URL.startsWith('mysql://')) {
+  console.error('FATAL: DATABASE_URL is still invalid after construction attempt');
+  console.error('DATABASE_URL value:', process.env.DATABASE_URL ? `"${process.env.DATABASE_URL}"` : 'NOT SET');
+  process.exit(1);
+}
+
+console.log('DATABASE_URL is valid, starting Prisma client...');
+console.log('DATABASE_URL preview:', process.env.DATABASE_URL.substring(0, 30) + '...');
 
 const app = express();
 const prisma = new PrismaClient();
