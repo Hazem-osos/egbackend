@@ -168,6 +168,7 @@ const allowedOrigins = [
   'https://egseekersfrontend-97jl1ayeu-hazemosama2553-gmailcoms-projects.vercel.app',
   'http://localhost:3000',
   'https://localhost:3000',
+  'https://egseekersfrontend.vercel.app',
   process.env.FRONTEND_URL,
   // Allow any Render frontend URL
   /^https:\/\/.*\.onrender\.com$/,
