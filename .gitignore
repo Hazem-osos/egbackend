@@ -44,4 +44,10 @@ Thumbs.db
 
 # Prisma
 prisma/migrations/
-backend/.env
+
+# Environment files (all variations)
+.env
+.env.local
+.env.production
+.env.development
+.env.*

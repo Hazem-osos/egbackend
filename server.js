@@ -344,8 +344,13 @@ const connectWithRetry = async (retries = 5) => {
 };
 
 // Routes
+// Mount routes with /api prefix (primary)
 app.use('/api/auth', authRoutes);
 app.use('/api/users', auth, userRoutes);
+
+// Also mount routes without /api prefix for compatibility
+// (in case requests come through a proxy that strips /api)
+app.use('/auth', authRoutes);
 app.use('/api/jobs', auth, jobRoutes);
 app.use('/api/payments', auth, paymentRoutes);
 app.use('/api/reviews', auth, reviewRoutes);
