@@ -75,17 +75,21 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
    - **CRITICAL**: Make sure `DATABASE_URL` is NOT set to localhost!
 
 3. **Configure Build Settings**
-   - Build Command: `npm install && npx prisma generate`
+   - Build Command: `npm install && npx prisma generate && npx prisma migrate deploy`
    - Start Command: `npm start`
    - Environment: `Node`
+   - **Note**: The build command will automatically run migrations on each deploy
 
 4. **Deploy**
    - Render will automatically build and deploy
    - Check logs for any errors
+   - The migrations will run automatically during the build process
 
-5. **Run Database Migration** (if needed)
-   - Go to your service → Shell
-   - Run: `npx prisma db push`
+5. **Run Database Migration Manually** (if needed)
+   - If you see errors like "The table `User` does not exist", you need to run migrations manually
+   - Go to your service → Shell (or use Render's Shell feature)
+   - Run: `npx prisma migrate deploy`
+   - This will apply all pending migrations to your database
 
 ## Troubleshooting:
 
@@ -101,6 +105,15 @@ GOOGLE_CLIENT_SECRET=your_google_client_secret
 ### Error: "SSL connection required"
 - Make sure `?ssl-mode=REQUIRED` is included in your DATABASE_URL
 - Or set `DB_SSL_CA_CERT` if your database requires a specific certificate
+
+### Error: "The table `User` does not exist" or "P2021"
+- **Solution**: The database migrations haven't been run yet
+- **Option 1**: Wait for the next deployment - migrations run automatically during build
+- **Option 2**: Run migrations manually:
+  1. Go to your Render service → Shell
+  2. Run: `npx prisma migrate deploy`
+  3. This will create all necessary tables in your database
+- **Option 3**: If migrations fail, you can use `npx prisma db push` as a fallback (not recommended for production)
 
 ## Health Check:
 - Render will check `/api/health` endpoint

@@ -10,7 +10,9 @@
     "build": "npx prisma generate",
     "postinstall": "npx prisma generate",
     "prisma:generate": "prisma generate",
-    "deploy": "npx prisma db push"
+    "migrate:deploy": "npx prisma migrate deploy",
+    "migrate:dev": "npx prisma migrate dev",
+    "db:push": "npx prisma db push"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.0.0",

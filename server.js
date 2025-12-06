@@ -343,6 +343,22 @@ const connectWithRetry = async (retries = 5) => {
   }
 };
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({
+    success: true,
+    message: 'EgSeekers API',
+    version: '1.0.0',
+    status: 'running',
+    endpoints: {
+      health: '/api/health',
+      auth: '/api/auth',
+      docs: process.env.NODE_ENV !== 'production' ? '/api-docs' : null
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
 // Routes
 // Mount routes with /api prefix (primary)
 app.use('/api/auth', authRoutes);
