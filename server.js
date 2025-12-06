@@ -42,6 +42,7 @@ const creditRoutes = require('./routes/creditRoutes');
 const connectPurchaseRoutes = require('./routes/connectPurchaseRoutes');
 const contractRoutes = require('./routes/contractRoutes');
 const http = require('http');
+const { execSync } = require('child_process');
 const setupWebSocket = require('./websocket');
 const rateLimit = require('express-rate-limit');
 const adminAuth = require('./middleware/adminAuth');
@@ -297,6 +298,52 @@ if (process.env.NODE_ENV !== 'production') {
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
 }
 
+// Check if database tables exist and run migrations if needed
+const ensureDatabaseSchema = async () => {
+  try {
+    // Try to count users to see if the table exists
+    await prisma.user.count();
+    console.log('✓ Database schema exists');
+    return true;
+  } catch (error) {
+    // Check if error is about missing table
+    if (error.code === 'P2021' || 
+        error.message?.includes('does not exist') || 
+        error.message?.includes('Table') || 
+        error.message?.includes('Unknown table') ||
+        error.message?.includes('P2021')) {
+      console.log('⚠️  Database tables not found. Running migrations...');
+      try {
+        console.log('Running: npx prisma migrate deploy');
+        execSync('npx prisma migrate deploy', { 
+          stdio: 'inherit',
+          env: process.env 
+        });
+        console.log('✓ Migrations completed successfully');
+        return true;
+      } catch (migrationError) {
+        console.error('✗ Migration failed:', migrationError.message);
+        console.error('Please run migrations manually: npx prisma migrate deploy');
+        // Try db push as fallback
+        try {
+          console.log('Attempting fallback: npx prisma db push');
+          execSync('npx prisma db push', { 
+            stdio: 'inherit',
+            env: process.env 
+          });
+          console.log('✓ Database schema created using db push');
+          return true;
+        } catch (pushError) {
+          console.error('✗ db push also failed:', pushError.message);
+          return false;
+        }
+      }
+    }
+    // Other errors, assume schema exists
+    return true;
+  }
+};
+
 // Database connection with retry logic
 const connectWithRetry = async (retries = 5) => {
   // Extract host info for better error messages
@@ -314,6 +361,14 @@ const connectWithRetry = async (retries = 5) => {
       await prisma.$connect();
       console.log('Successfully connected to the database');
       console.log(`  Connected to: ${dbHostInfo}`);
+      
+      // Check and ensure database schema exists
+      const schemaExists = await ensureDatabaseSchema();
+      if (!schemaExists) {
+        console.error('✗ Failed to ensure database schema. Please run migrations manually.');
+        process.exit(1);
+      }
+      
       return;
     } catch (error) {
       console.error(`Failed to connect to the database (attempt ${i + 1}/${retries}):`);
