@@ -73,11 +73,39 @@ console.log('DATABASE_URL check:', {
   hasDBHost: !!process.env.DB_HOST
 });
 
+// If DATABASE_URL is already set and valid, log it
+if (!needsConstruction && process.env.DATABASE_URL) {
+  try {
+    const dbUrlObj = new URL(process.env.DATABASE_URL);
+    console.log('✓ DATABASE_URL is already set and valid');
+    console.log('  Database host:', dbUrlObj.hostname);
+    console.log('  Database port:', dbUrlObj.port || '3306');
+    console.log('  Database name:', dbUrlObj.pathname.substring(1)); // Remove leading /
+  } catch (e) {
+    // Will be caught in validation below
+  }
+}
+
 if (needsConstruction && process.env.DB_HOST) {
+  // Validate DB_HOST is not localhost in production
+  const dbHost = process.env.DB_HOST.trim();
+  if (process.env.NODE_ENV === 'production' && (dbHost === 'localhost' || dbHost === '127.0.0.1')) {
+    console.error('✗ FATAL: DB_HOST is set to localhost in production environment!');
+    console.error('  DB_HOST:', dbHost);
+    console.error('  This will not work on Render or any cloud platform.');
+    console.error('');
+    console.error('Please set DB_HOST to your actual production database host in Render environment variables.');
+    process.exit(1);
+  }
+  
   const sslCert = process.env.DB_SSL_CA_CERT;
   
+  // URL encode user and password to handle special characters (but not database name in path)
+  const dbUser = encodeURIComponent(process.env.DB_USER);
+  const dbPassword = encodeURIComponent(process.env.DB_PASSWORD);
+  
   // Build DATABASE_URL for Prisma with proper SSL configuration
-  let dbUrl = `mysql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`;
+  let dbUrl = `mysql://${dbUser}:${dbPassword}@${dbHost}:${process.env.DB_PORT}/${process.env.DB_DATABASE}`;
   
   // Add SSL parameters if SSL cert is provided
   if (sslCert) {
@@ -94,7 +122,7 @@ if (needsConstruction && process.env.DB_HOST) {
   
   process.env.DATABASE_URL = dbUrl;
   console.log('✓ Constructed DATABASE_URL from Aiven variables');
-  console.log('  Database host:', process.env.DB_HOST);
+  console.log('  Database host:', dbHost);
   console.log('  Database port:', process.env.DB_PORT);
   console.log('  Database name:', process.env.DB_DATABASE);
 } else if (needsConstruction && !process.env.DB_HOST) {
@@ -118,6 +146,36 @@ if (!finalDbUrl || !finalDbUrl.startsWith('mysql://')) {
   console.error('  DATABASE_URL value:', finalDbUrl || 'NOT SET');
   console.error('  Length:', finalDbUrl ? finalDbUrl.length : 0);
   console.error('  Starts with mysql://:', finalDbUrl.startsWith('mysql://'));
+  process.exit(1);
+}
+
+// Parse DATABASE_URL to extract host and validate
+try {
+  const dbUrlObj = new URL(finalDbUrl);
+  const dbHost = dbUrlObj.hostname;
+  const dbPort = dbUrlObj.port || '3306';
+  
+  console.log('✓ DATABASE_URL parsed successfully');
+  console.log('  Database host:', dbHost);
+  console.log('  Database port:', dbPort);
+  
+  // In production, reject localhost connections
+  if (process.env.NODE_ENV === 'production' && (dbHost === 'localhost' || dbHost === '127.0.0.1')) {
+    console.error('✗ FATAL: DATABASE_URL points to localhost in production environment!');
+    console.error('  This will not work on Render or any cloud platform.');
+    console.error('  Current host:', dbHost);
+    console.error('  DATABASE_URL preview:', finalDbUrl.substring(0, 60) + '...');
+    console.error('');
+    console.error('Please set the correct database connection in Render environment variables:');
+    console.error('  - Either set DATABASE_URL with your production database host');
+    console.error('  - Or set DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_DATABASE');
+    console.error('  - Make sure DB_HOST is NOT localhost or 127.0.0.1');
+    process.exit(1);
+  }
+} catch (error) {
+  console.error('✗ FATAL: Failed to parse DATABASE_URL');
+  console.error('  Error:', error.message);
+  console.error('  DATABASE_URL value:', finalDbUrl.substring(0, 100));
   process.exit(1);
 }
 
@@ -241,15 +299,42 @@ if (process.env.NODE_ENV !== 'production') {
 
 // Database connection with retry logic
 const connectWithRetry = async (retries = 5) => {
+  // Extract host info for better error messages
+  let dbHostInfo = 'unknown';
+  try {
+    const dbUrlObj = new URL(process.env.DATABASE_URL);
+    dbHostInfo = `${dbUrlObj.hostname}:${dbUrlObj.port || '3306'}`;
+  } catch (e) {
+    // Ignore parsing errors, we'll use the full URL
+    dbHostInfo = process.env.DATABASE_URL ? process.env.DATABASE_URL.substring(0, 50) : 'NOT SET';
+  }
+  
   for (let i = 0; i < retries; i++) {
     try {
       await prisma.$connect();
       console.log('Successfully connected to the database');
+      console.log(`  Connected to: ${dbHostInfo}`);
       return;
     } catch (error) {
-      console.error(`Failed to connect to the database (attempt ${i + 1}/${retries}):`, error);
+      console.error(`Failed to connect to the database (attempt ${i + 1}/${retries}):`);
+      console.error(`  Trying to connect to: ${dbHostInfo}`);
+      console.error(`  Error: ${error.message}`);
+      
+      // Check if error mentions localhost
+      if (error.message && error.message.includes('localhost')) {
+        console.error('');
+        console.error('⚠️  WARNING: Connection error mentions localhost!');
+        console.error('  This usually means DATABASE_URL is incorrectly configured.');
+        console.error('  In production (Render), you must use your actual database host, not localhost.');
+        console.error('  Please check your Render environment variables.');
+      }
+      
       if (i === retries - 1) {
+        console.error('');
         console.error('Max retries reached. Exiting...');
+        console.error('Please verify your database connection settings in Render:');
+        console.error('  - DATABASE_URL should point to your production database');
+        console.error('  - OR set DB_HOST, DB_USER, DB_PASSWORD, DB_PORT, DB_DATABASE');
         process.exit(1);
       }
       // Wait for 5 seconds before retrying
